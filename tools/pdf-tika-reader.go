@@ -6,6 +6,7 @@ import (
 	"log"
 	"nanpangyou/invoice-tool/structs"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/google/go-tika/tika"
@@ -39,17 +40,34 @@ func PdfTikaReader() {
 	}
 	var demoText []string
 	for _, v := range de {
-		f, err := os.Open(currentDirPath + path + "/" + v.Name())
-		if err != nil {
-			log.Fatal(err)
+		if strings.HasSuffix(v.Name(), ".pdf") {
+			f, err := os.Open(currentDirPath + path + "/" + v.Name())
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("v.Name(): %v\n", v.Name())
+			fmt.Printf("f.Name(): %v\n", f.Name())
+			defer f.Close()
+			s, _ := client.Parse(context.Background(), f)
+			// fmt.Printf("s: %v\n", s)
+			// fmt.Printf("demoText: %v\n", demoText)
+			c := strings.ReplaceAll(s, " ", "")
+			// fmt.Printf("c: %v\n", c)
+			c = strings.ReplaceAll(c, "\n", "")
+			c = strings.ReplaceAll(c, "\t", "")
+			r := regexp.MustCompile("<body>(.*?)</body>")
+			s1 := r.FindAllString(c, -1)
+			r2 := regexp.MustCompile("<p>(.*?)</p>")
+			s3 := r2.FindAllString(strings.Join(s1, ""), -1)
+
+			// fmt.Printf("s3: %v\n", s3)
+			// fmt.Printf("s2: %v\n", s3)
+			// fmt.Printf("len(s3): %v\n", len(s3))
+			// fmt.Printf("s2[len(s2)-6:]: %v\n", s3[len(s3)-6:])
+			demoText = append(demoText, strings.Join(s3[len(s3)-10:], ""))
 		}
-		fmt.Printf("v.Name(): %v\n", v.Name())
-		fmt.Printf("f.Name(): %v\n", f.Name())
-		defer f.Close()
-		s, _ := client.Parse(context.Background(), f)
-		demoText = append(demoText, s)
-		// demoText.append (demoText[]byte(s))
 	}
+	// fmt.Printf("demoText[:]: %v\n", )
 	GenenrateSheet(strings.Join(demoText, ""))
 
 }
